@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.vite/
+
+*.tsbuildinfo
+
+vite.config.js
+vite.config.d.ts
+tailwind.config.js
+tailwind.config.d.ts
+
+mobile-check.png
+narrow-check.png
+
+.DS_Store
+Thumbs.db

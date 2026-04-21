@@ -4,7 +4,7 @@ import { DiagnosisProvider } from '@/features/diagnosis/store/DiagnosisProvider'
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (
-    <HashRouter>
+    <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <DiagnosisProvider>{children}</DiagnosisProvider>
     </HashRouter>
   );

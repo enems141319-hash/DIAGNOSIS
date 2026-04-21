@@ -10,26 +10,26 @@ export function DiagnosisHero() {
             Strategic Monolith
           </div>
           <div className="space-y-4">
-            <h1 className="max-w-3xl text-5xl font-semibold leading-none tracking-[-0.03em] text-bone md:text-7xl">
-              在擴張之前，先看清你的品牌結構。
+            <h1 className="max-w-3xl text-5xl font-black leading-none tracking-[-0.03em] text-accent md:text-7xl">
+              你是真的有需要做品牌嗎？
             </h1>
             <p className="max-w-2xl text-base leading-7 text-ink-2 md:text-lg">
-              透過品牌清晰度、視覺一致性、市場差異與轉換信任四個面向，快速找出目前最影響品牌成效的問題。
+              並不是每個產業都需要做品牌系統，讓我們用簡單的診斷來識別你是否需要投資品牌建立。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Link to="/diagnosis" className={getButtonClassName('accent')}>
               開始診斷
             </Link>
-            <Link to="/result" className={getButtonClassName('ghost')}>
-              查看結果頁
-            </Link>
+            <a href="https://snapcostudio.com/" target="_blank" rel="noreferrer" className={getButtonClassName('ghost')}>
+              返回SnapCo首頁
+            </a>
           </div>
         </div>
         <div className="grid gap-3">
-          <MetricBlock label="流程">多步驟品牌診斷流程</MetricBlock>
-          <MetricBlock label="計分">純前端本地計分，不串 API</MetricBlock>
-          <MetricBlock label="架構">React feature module 拆分</MetricBlock>
+          <MetricBlock label="流程">四大分類診斷</MetricBlock>
+          <MetricBlock label="計分">總共20題選擇，依權重計分</MetricBlock>
+          <MetricBlock label="結果">越高分代表急迫性越高</MetricBlock>
         </div>
       </div>
     </SurfaceCard>
@@ -45,7 +45,7 @@ function MetricBlock({
 }) {
   return (
     <div className="rounded-[2rem] bg-white/[0.04] px-5 py-4 backdrop-blur-xl">
-      <div className="text-[10px] uppercase tracking-[0.28em] text-ink-3">{label}</div>
+      <div className="text-[10px] uppercase tracking-[0.28em] text-accent">{label}</div>
       <div className="mt-2 text-sm text-bone">{children}</div>
     </div>
   );

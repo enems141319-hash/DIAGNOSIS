@@ -4,7 +4,6 @@
 
 :root {
   color: #f2f2f2;
-  background-color: #050505;
   font-family: Inter, "Segoe UI", sans-serif;
 }
 
@@ -12,22 +11,11 @@
   box-sizing: border-box;
 }
 
-html {
-  background:
-    radial-gradient(circle at top left, rgba(255, 77, 46, 0.12), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(255, 77, 46, 0.08), transparent 28%),
-    #050505;
-}
-
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
   color: rgba(242, 242, 242, 0.96);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.005)),
-    radial-gradient(circle at 20% 20%, rgba(255, 77, 46, 0.06), transparent 24%),
-    #050505;
 }
 
 body::before {

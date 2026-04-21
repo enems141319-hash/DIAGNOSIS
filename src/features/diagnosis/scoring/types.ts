@@ -1,14 +1,14 @@
 export type DiagnosisDimensionKey =
-  | 'brand_clarity'
-  | 'visual_consistency'
-  | 'differentiation'
-  | 'conversion_trust';
+  | 'brand'
+  | 'visual'
+  | 'growth'
+  | 'conversion';
 
 export type DiagnosisSectionId =
-  | 'brand_clarity'
-  | 'visual_consistency'
-  | 'differentiation'
-  | 'conversion_trust';
+  | 'brand'
+  | 'visual'
+  | 'growth'
+  | 'conversion';
 
 export type DiagnosisQuestionId = string;
 
@@ -26,6 +26,7 @@ export type DiagnosisQuestionOption = {
   id: DiagnosisOptionId;
   label: string;
   score: number;
+  image?: string;
 };
 
 export type DiagnosisQuestionDefinition = {
@@ -96,6 +97,10 @@ export type DimensionTextRule = {
   };
 };
 
+export type UrgencyCategory = 'branding' | 'web' | 'space' | 'social';
+
+export type UrgencyScores = Record<UrgencyCategory, number>;
+
 export type DiagnosisResult = {
   totalScore: number;
   maxScore: number;
@@ -107,4 +112,5 @@ export type DiagnosisResult = {
   dimensionInsights: DimensionInsight[];
   keyProblems: string[];
   recommendations: string[];
+  urgency: UrgencyScores;
 };

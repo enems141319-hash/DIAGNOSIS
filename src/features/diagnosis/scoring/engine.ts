@@ -17,6 +17,8 @@ import type {
   DiagnosisResult,
   DimensionScore,
   DimensionTextRule,
+  UrgencyCategory,
+  UrgencyScores,
 } from '@/features/diagnosis/scoring/types';
 
 const questionMap = new Map<DiagnosisQuestionId, DiagnosisQuestionDefinition>(
@@ -92,14 +94,9 @@ export function calculateDimensionScores(
 export function calculateTotalScore(dimensionScores: DimensionScore[]) {
   const rawTotal = dimensionScores.reduce((sum, item) => sum + item.score, 0);
   const maxScore = dimensionScores.reduce((sum, item) => sum + item.maxScore, 0);
-  const basePercentage = maxScore === 0 ? 0 : (rawTotal / maxScore) * 100;
-  const lowest = findLowestDimension(dimensionScores);
-  const weaknessPenalty = lowest
-    ? (100 - lowest.percentage) * diagnosisScoringRules.weaknessPenaltyRate
-    : 0;
   const percentage = Math.max(
     diagnosisScoringRules.normalizationFloor,
-    Math.min(100, Math.round(basePercentage - weaknessPenalty)),
+    Math.min(100, Math.round(maxScore === 0 ? 0 : (rawTotal / maxScore) * 100)),
   );
 
   return {
@@ -109,6 +106,7 @@ export function calculateTotalScore(dimensionScores: DimensionScore[]) {
   };
 }
 
+// Returns the highest-urgency dimension (highest percentage = most urgent need).
 export function findLowestDimension(
   dimensionScores: DimensionScore[],
 ): DimensionScore | null {
@@ -118,10 +116,10 @@ export function findLowestDimension(
 
   return [...dimensionScores].sort((left, right) => {
     if (left.percentage !== right.percentage) {
-      return left.percentage - right.percentage;
+      return right.percentage - left.percentage;
     }
 
-    return left.score - right.score;
+    return right.score - left.score;
   })[0];
 }
 
@@ -140,34 +138,110 @@ export function buildOverallSummary(level: DiagnosisOverallLevel) {
 }
 
 export function buildDimensionInsights(dimensionScores: DimensionScore[]) {
-  return dimensionScores.map((dimensionScore) => {
-    const texts = pickDimensionBandText(
-      dimensionScore.percentage,
-      dimensionScore.dimension,
-    );
+  return [...dimensionScores]
+    .sort((left, right) => right.percentage - left.percentage)
+    .map((dimensionScore) => {
+      const texts = pickDimensionBandText(
+        dimensionScore.percentage,
+        dimensionScore.dimension,
+      );
 
-    return {
-      dimension: dimensionScore.dimension,
-      title: formatDimensionTitle(dimensionScore.dimension),
-      summary: texts.insight,
-      score: Math.round(dimensionScore.score * 10) / 10,
-      percentage: dimensionScore.percentage,
-    };
-  });
+      return {
+        dimension: dimensionScore.dimension,
+        title: formatDimensionTitle(dimensionScore.dimension),
+        summary: texts.insight,
+        score: Math.round(dimensionScore.score * 10) / 10,
+        percentage: dimensionScore.percentage,
+      };
+    });
 }
 
 export function buildKeyProblems(dimensionScores: DimensionScore[]) {
-  return dimensionScores
-    .filter((item) => item.percentage < dimensionBandThresholds.strong)
-    .sort((left, right) => left.percentage - right.percentage)
+  return [...dimensionScores]
+    .filter((item) => item.percentage >= dimensionBandThresholds.medium)
+    .sort((left, right) => right.percentage - left.percentage)
     .map((item) => pickDimensionBandText(item.percentage, item.dimension).problem);
 }
 
 export function buildRecommendations(dimensionScores: DimensionScore[]) {
-  return dimensionScores
-    .sort((left, right) => left.percentage - right.percentage)
+  return [...dimensionScores]
+    .sort((left, right) => right.percentage - left.percentage)
     .slice(0, 2)
     .map((item) => pickDimensionBandText(item.percentage, item.dimension).recommendation);
+}
+
+// Questions contributing to each urgency category for the base weighted-risk calculation.
+const URGENCY_QUESTION_MAP: Record<UrgencyCategory, DiagnosisQuestionId[]> = {
+  branding: ['Q1', 'Q2', 'Q3', 'Q4', 'Q5'],
+  web: ['Q16', 'Q18', 'Q19', 'Q20'],
+  space: ['Q12', 'Q15', 'Q17'],
+  social: ['Q9', 'Q10', 'Q16', 'Q18'],
+};
+
+function getQuestionScoreValue(
+  questionId: DiagnosisQuestionId,
+  answers: DiagnosisAnswerMap,
+): number | null {
+  const optionId = answers[questionId];
+  if (!optionId) return null;
+  const question = questionMap.get(questionId);
+  if (!question) return null;
+  return question.options.find((o) => o.id === optionId)?.score ?? null;
+}
+
+export function calculateUrgency(answers: DiagnosisAnswerMap): UrgencyScores {
+  const normalized = normalizeAnswers(answers);
+  const q = (id: string) => getQuestionScoreValue(id, normalized);
+
+  const categories: UrgencyCategory[] = ['branding', 'web', 'space', 'social'];
+  const base = {} as Record<UrgencyCategory, number>;
+
+  // Scores are direct urgency signals: high score = high urgency (1–4 scale).
+  // Normalize per category: base = (sum score*weight) / (sum 4*weight) * 100
+  for (const category of categories) {
+    let total = 0;
+    let maxTotal = 0;
+
+    for (const qId of URGENCY_QUESTION_MAP[category]) {
+      const question = questionMap.get(qId);
+      if (!question) continue;
+      maxTotal += 4 * question.weight;
+      const score = q(qId);
+      if (score !== null) {
+        total += score * question.weight;
+      }
+    }
+
+    base[category] = maxTotal === 0 ? 0 : Math.round((total / maxTotal) * 100);
+  }
+
+  // Force-trigger bonuses — aligned with new score direction (high score = urgent).
+  // Reversed questions (Q2,Q3,Q4,Q5,Q12,Q13,Q16,Q17,Q18,Q19): urgent = score >= 3.
+  // Unchanged questions (Q1,Q15): urgent = score >= 3.
+  const brandingBonus =
+    (q('Q1') !== null && q('Q1')! >= 3 ? 25 : 0) +
+    (q('Q3') !== null && q('Q3')! >= 3 ? 25 : 0) +
+    (q('Q5') !== null && q('Q5')! === 4 ? 30 : 0);
+
+  const webBonus =
+    (q('Q16') !== null && q('Q16')! >= 3 ? 25 : 0) +
+    (q('Q18') !== null && q('Q18')! >= 3 ? 30 : 0);
+
+  const spaceBonus =
+    (q('Q17') !== null && q('Q17')! >= 3 ? 25 : 0) +
+    (q('Q12') !== null && q('Q12')! >= 3 ? 20 : 0) +
+    (q('Q15') !== null && q('Q15')! >= 3 ? 20 : 0);
+
+  const socialBonus =
+    (q('Q16') !== null && q('Q16')! >= 2 ? 20 : 0) +
+    (q('Q18') !== null && q('Q18')! >= 3 ? 25 : 0);
+
+  return {
+    branding: Math.min(100, base.branding + brandingBonus),
+    web: Math.min(100, base.web + webBonus),
+    space: Math.min(100, base.space + spaceBonus),
+    social: Math.min(100, base.social + socialBonus),
+  };
 }
 
 export function runDiagnosisScoring(
@@ -187,6 +261,7 @@ export function runDiagnosisScoring(
     dimensionInsights: buildDimensionInsights(dimensionScores),
     keyProblems: buildKeyProblems(dimensionScores),
     recommendations: buildRecommendations(dimensionScores),
+    urgency: calculateUrgency(answers),
   };
 }
 
@@ -231,10 +306,10 @@ function pickDimensionBandText(
 
 function formatDimensionTitle(dimension: DiagnosisDimensionKey) {
   const titles: Record<DiagnosisDimensionKey, string> = {
-    brand_clarity: '品牌清晰度',
-    visual_consistency: '視覺一致性',
-    differentiation: '市場差異',
-    conversion_trust: '轉換與信任',
+    brand: '概況與展望',
+    visual: '消費者角度',
+    growth: '經營與擴張',
+    conversion: '轉換與現況',
   };
 
   return titles[dimension];

@@ -17,7 +17,7 @@ export function ResultPresentation() {
           <div className="text-[11px] uppercase tracking-[0.32em] text-ink-3">
             診斷結果
           </div>
-          <h1 className="text-5xl font-semibold leading-none tracking-[-0.03em] text-bone md:text-7xl">
+          <h1 className="text-5xl font-bold leading-none tracking-[-0.03em] text-accent md:text-7xl">
             {formatOverallLevel(result.overallLevel)}
           </h1>
           <p className="max-w-3xl text-base leading-7 text-ink-2 md:text-lg">
@@ -26,11 +26,11 @@ export function ResultPresentation() {
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
-          <StatItem label="總分">
+          <StatItem label="急迫指數">
             {Math.round(result.totalScore)} / {Math.round(result.maxScore)}
           </StatItem>
-          <StatItem label="整體百分比">{result.percentage}%</StatItem>
-          <StatItem label="最低分面向">
+          <StatItem label="整體急迫度">{result.percentage}%</StatItem>
+          <StatItem label="最急迫面向">
             {result.lowestDimension
               ? `${formatDimension(result.lowestDimension.dimension)} ${result.lowestDimension.percentage}%`
               : '無'}
@@ -81,10 +81,10 @@ export function ResultPresentation() {
 
       <div className="flex flex-wrap gap-3">
         <Button variant="accent" onClick={restartDiagnosis}>
-          重新開始
+          重新測試
         </Button>
-        <Button variant="ghost" onClick={returnHome}>
-          返回首頁
+        <Button variant="ghost" onClick={() => window.open('https://snapcostudio.com/', '_blank')}>
+          SnapCo首頁
         </Button>
       </div>
     </div>
@@ -114,10 +114,10 @@ function StatItem({
 
 function formatOverallLevel(level: string) {
   const labels: Record<string, string> = {
-    critical: '待重整',
-    fragile: '基礎偏弱',
-    stable: '穩定成形',
-    strong: '成熟穩健',
+    strong: '高度建議投入',
+    stable: '建議開始規劃',
+    fragile: '可以提前布局',
+    critical: '目前暫不急迫',
   };
 
   return labels[level] ?? level;
@@ -125,10 +125,10 @@ function formatOverallLevel(level: string) {
 
 function formatDimension(dimension: DiagnosisDimensionKey) {
   const labels: Record<DiagnosisDimensionKey, string> = {
-    brand_clarity: '品牌清晰度',
-    visual_consistency: '視覺一致性',
-    differentiation: '市場差異',
-    conversion_trust: '轉換與信任',
+    brand: '概況與展望',
+    visual: '消費者角度',
+    growth: '經營與擴張',
+    conversion: '轉換與現況',
   };
 
   return labels[dimension];

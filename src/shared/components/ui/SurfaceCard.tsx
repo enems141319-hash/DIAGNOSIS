@@ -8,7 +8,7 @@ type SurfaceCardProps = PropsWithChildren<{
 const toneClassName = {
   low: 'bg-surface-1',
   high: 'bg-surface-2',
-  glass: 'bg-white/[0.04] backdrop-blur-2xl ring-1 ring-white/10',
+  glass: 'bg-white/[0.07] ring-1 ring-white/10',
 };
 
 export function SurfaceCard({

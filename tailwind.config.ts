@@ -22,7 +22,7 @@ export default {
         },
       },
       boxShadow: {
-        ambient: '0 6px 32px rgba(255, 77, 46, 0.60)',
+        ambient: '0 6px 32px rgba(255, 77, 46, 0.42)',
         insetGlow: 'inset 0 0 0 1px rgba(255, 77, 46, 0.3)',
       },
       borderRadius: {
